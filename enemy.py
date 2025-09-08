@@ -39,9 +39,9 @@ class Enemy(pygame.sprite.Sprite):
             return
         
         if player_x < self.rect.x:
-            self.speed = -5
+            self.speed = -3
         elif player_x > self.rect.x:
-            self.speed = 5
+            self.speed = 3
         self.rect.x += self.speed
 
     def animation(self):

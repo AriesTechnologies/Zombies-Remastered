@@ -116,12 +116,12 @@ class Player(pygame.sprite.GroupSingle):
             if event.key == pygame.K_RIGHT:
                 self.direction = "Right"
                 if self.sprite.rect.x < 1280:
-                    self.speed = 10
+                    self.speed = 12
                     self.sprite.rect.x += self.speed
             if event.key == pygame.K_LEFT:
                 self.direction = "Left"
                 if self.sprite.rect.x > 0:
-                    self.speed = -10
+                    self.speed = -12
                     self.sprite.rect.x += self.speed
             if event.key in {pygame.K_RSHIFT, pygame.K_LSHIFT}\
             or (event.mod in {pygame.KMOD_RSHIFT, pygame.KMOD_LSHIFT}):

@@ -4,7 +4,7 @@ import pygame
 from typing import Self
 from .palette import Palette
 from .colors import BLACK, WHITE, RED
-from .fonts import font, text_obj
+from .fonts import font, Text, TextSize
 
 
 # --- Button Class --- #
@@ -51,7 +51,7 @@ class Button(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, Button._palette.fg_color, ((0,0),self.rect.size), width = 1)
 
         font.size = 30
-        textSurf, textRect  = text_obj(self.text, Button._palette.fg_color, "small")
-        textRect.center = pygame.Vector2(self.rect.size)//2 #self.rect.w//2, self.rect.h//2
+        textSurf, textRect  = Text(self.text, Button._palette.fg_color, TextSize.SMALL)
+        textRect.center = pygame.Vector2(self.rect.size)//2
         self.image.blit(textSurf, textRect)
 

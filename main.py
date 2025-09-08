@@ -3,7 +3,7 @@
 import sys
 import pygame
 
-from gfx import Button, Label, Palette, text_obj, BLACK, GREEN, RED, WHITE
+from gfx import Button, Label, Alignment, Palette, Text, TextSize, BLACK, GREEN, RED, WHITE
 from background import Background
 from enemy import Enemy
 from player import Player
@@ -23,15 +23,15 @@ display = pygame.display.set_mode(display_size, pygame.RESIZABLE)
 
 # --- Definitions --- #
 
-def message_to_screen(msg: str, color: pygame.Color, x_pos: int, x_Displace: int = 0, y_Displace: int = 0, size: str = "small"):
-    textSurf, textRect = text_obj(msg, color, size)
-    match x_pos:
-        case 1: textRect.left = (display_w//6+x_Displace, display_h//2+y_Displace)
-        case 1.5: textRect = (display_w//3+x_Displace, display_h//2+y_Displace)
-        case 2: textRect.center = (display_w//2+x_Displace, display_h//2+y_Displace)
-        case 3: textRect.right = (display_w//1.5+x_Displace, display_h//2+y_Displace)
-##    textRect.topleft = pos
-    display.blit(textSurf, textRect)
+##def message_to_screen(msg: str, color: pygame.Color, x_pos: int, x_Displace: int = 0, y_Displace: int = 0, size: str = "small"):
+##    textSurf, textRect = text_obj(msg, color, size)
+##    match x_pos:
+##        case 1: textRect.left = (display_w//6+x_Displace, display_h//2+y_Displace)
+##        case 1.5: textRect = (display_w//3+x_Displace, display_h//2+y_Displace)
+##        case 2: textRect.center = (display_w//2+x_Displace, display_h//2+y_Displace)
+##        case 3: textRect.right = (display_w//1.5+x_Displace, display_h//2+y_Displace)
+####    textRect.topleft = pos
+##    display.blit(textSurf, textRect)
 
 
 # --- Game --- #
@@ -43,7 +43,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.menus_path = [self.title_menu]
-        self.menu = pygame.sprite.Group()
+##        self.ui = pygame.sprite.Group()
 
         self.round = 1
         self.round_enemy_amount = 5
@@ -53,36 +53,38 @@ class Game:
         self.player = Player()
         self.enemies = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
+        self.ui = pygame.sprite.Group()
 
         self.quit = False
         self.paused = False
         self.game = False
 
-        self.score_sprite_small = Label(f"Score: {self.score}", WHITE, "small")
-
-        self.score_sprite = Label(f"Score: {self.score}", WHITE, "medium")
+        self.score_sprite_small = Label(f"Score: {self.score}", WHITE, TextSize.SMALL)
+        self.score_sprite = Label(f"Score: {self.score}", WHITE, TextSize.MEDIUM)
+        self.copyright_sprite = Label("©2025 AriesTechnologies", WHITE, TextSize.SMALL)
+        self.copyright_sprite.rect.midbottom = display_w//2, display_h
 
         self.menus_path[-1]()
 
     def title_menu(self):
-        self.menu.empty()
-        lbl = Label("Zombies", GREEN,  "xlarge") #(0,0), 
-        lbl.rect.x = display_w//2-lbl.rect.w//2
-        self.menu.add(lbl)
+        self.ui.empty()
+        lbl = Label("Zombies", GREEN, TextSize.XLARGE, Alignment.CENTER, (display_w//2,0))
+        self.ui.add(lbl)
 
         btnTexts = ("Play", "Options", "Updates")
         btnRect = pygame.Rect(536,371,208,58)
         for idx,text in enumerate(btnTexts):
             btn = Button(btnRect.size, text)
             btn.rect.x = btnRect.x
-            btn.rect.y = btnRect.y+btn.rect.h*idx
-            self.menu.add(btn)
+            btn.rect.y = btnRect.y+btnRect.h*idx
+            self.ui.add(btn)
+
+        self.ui.add(self.copyright_sprite)
 
     def options_menu(self):
-        self.menu.empty()
-        lbl = Label("Instructions:", GREEN, "xlarge") #(0,0), 
-        lbl.rect.x = display_w//2-lbl.rect.w//2
-        self.menu.add(lbl)
+        self.ui.empty()
+        lbl = Label("Instructions:", GREEN, TextSize.XLARGE, Alignment.CENTER, (display_w//2,0))
+        self.ui.add(lbl)
 
         lbls = ("Right Arrow and Left Arrow Keys: Movement",
                 "Up Arrow Key: Jump",
@@ -92,27 +94,37 @@ class Game:
                 )
 
         for index,label_text in enumerate(lbls):
-            lbl = Label(label_text, WHITE, "medium") #(0,0), 
-            lbl.rect.x = display_w//2-lbl.rect.w//2
-            lbl.rect.y = 50*index+150 #Insert random number currently
-            self.menu.add(lbl)
+            lbl = Label(label_text, WHITE, TextSize.MEDIUM, Alignment.CENTER, (display_w//2,50*index+150)) #(0,0),
+            self.ui.add(lbl)
+
+        self.ui.add(self.copyright_sprite)
 
     def updates_menu(self):
-        self.menu.empty()
-        lbl = Label("Updates:", GREEN, "xlarge") #(0,0), 
-        lbl.rect.x = display_w//2-lbl.rect.w//2
-        self.menu.add(lbl)
+        self.ui.empty()
+        lbl = Label("Updates:", GREEN, TextSize.XLARGE, Alignment.CENTER, (display_w//2,0))
+        self.ui.add(lbl)
+
+        self.ui.add(self.copyright_sprite)
 
     def paused_menu(self):
-        self.menu.empty()
-        lbl = Label("Paused", RED, "large") #(0,0), 
+        self.ui.empty()
+        lbl = Label("Paused", RED, TextSize.LARGE) #(0,0), 
         lbl.rect.center = display_w//2, display_h//2
-        self.menu.add(lbl)
+        self.ui.add(lbl)
 
-        lbl1 = Label(f"Score: {self.score}", WHITE, "medium") #(0,0), 
-        lbl1.rect.x = display_w//2-lbl1.rect.w//2
-        lbl1.rect.y = display_h//2-lbl.rect.h
-        self.menu.add(lbl1)
+        lbl1 = Label(f"Score: {self.score}", WHITE, TextSize.MEDIUM)
+        lbl1.rect.midbottom = display_w//2, lbl.rect.top
+        self.ui.add(lbl1)
+
+    def game_over(self):
+        self.ui.empty()
+        lbl = Label("Game Over!", RED, TextSize.XLARGE)
+        lbl.rect.center = display_w//2, display_h//2
+        self.ui.add(lbl)
+
+        self.score_sprite.rect.midtop = lbl.rect.midbottom
+        self.score_sprite.rect.y += self.score_sprite.rect.height
+        self.ui.add(self.score_sprite)
 
     def events(self):
         event = pygame.event.poll()
@@ -125,22 +137,31 @@ class Game:
                 self.menus_path.append(self.paused_menu)
                 self.menus_path[-1]()
             elif not self.game and event.key in {pygame.K_ESCAPE, pygame.K_BACKSPACE}:
+                if self.paused or not self.game:
+                    self.ui.empty()
                 if len(self.menus_path) > 1:
                     del self.menus_path[-1]
                 if self.paused:
                     del self.menus_path[-1]
                     self.paused = False
                     self.game = True
+                    self.score_sprite_small.rect.topleft = (0,0)
+                    self.ui.add(self.score_sprite_small)
+                    if self.player.dead:
+                        self.menus_path.append(self.game_over)
                 if len(self.menus_path) > 0:
                     self.menus_path[-1]()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if not self.game and event.button == 1:
-                buttons = tuple(self.menu.sprites())[1:]
+                buttons = tuple(self.ui.sprites())[1:]
                 if buttons[0].active:
                     self.menus_path.clear()
+                    self.ui.empty()
                     self.game = True
                     self.background.animation_int = 0
                     self.background.update()
+                    self.score_sprite_small.rect.topleft = (0,0)
+                    self.ui.add(self.score_sprite_small)
                 elif buttons[1].active:
                     self.menus_path.append(self.options_menu)
                     self.menus_path[-1]()
@@ -149,7 +170,7 @@ class Game:
                     self.menus_path[-1]()
                     
         if not self.game:
-            buttons = tuple(self.menu.sprites())[1:]
+            buttons = tuple(self.ui.sprites())[1:]
             cur_pos = pygame.mouse.get_pos()
             for button in buttons:
                 button.collide(cur_pos)
@@ -188,32 +209,26 @@ class Game:
                 continue
             
             self.player.health -= enemy.damage
-            if self.player.dead:
-                self.player.die()
+            
+        if self.player.dead:
+            self.player.die()
+            self.bullets.empty()
+            self.enemies.empty()
+            self.game_over()
+            self.menus_path.append(self.game_over)
+            self.menus_path[-1]()
 
     def draw(self):
         display.fill(BLACK)
-        self.background.draw(display)
+        if not self.paused and not self.player.dead:
+            self.background.draw(display)
 
-        if not self.game:
-            if self.paused:
-                display.fill(BLACK)
-            self.menu.draw(display)
-            if not self.paused:
-                message_to_screen("©2025 AriesTechnologies", WHITE, 2, 0, 305, size="small")
-        else:
-            if self.player.dead:
-                display.fill(BLACK)
-                self.player.draw(display)
-                message_to_screen("Game Over!", RED, 2, 0, 0, size="xlarge")
-                message_to_screen(f"Score: {self.score}", WHITE, 2, 0, 75, size="medium") #Add score later
-            else:
-                self.player.draw(display)
-                self.bullets.draw(display)
-                self.enemies.draw(display)
-##                message_to_screen(f"Score: {self.score}", WHITE, (0,0), size="small")
-                message_to_screen(f"Score: {self.score}", WHITE, 2, -575, -325, size="small")
-
+        if self.game:
+            self.player.draw(display)
+            self.bullets.draw(display)
+            self.enemies.draw(display)
+            
+        self.ui.draw(display)
         pygame.display.flip()
 
     def main(self):
