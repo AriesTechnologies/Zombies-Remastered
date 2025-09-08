@@ -7,7 +7,7 @@ import pygame
 # --- Enemy Class --- #
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, inverse_speed: bool):
         super().__init__()
 
         self.animation_int = 0
@@ -18,53 +18,46 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x = random.randrange(0,1280)
         self.rect.y = 530
 
-        self.direction = "Right"
-        self.damage = 30
-        self.speed = 5
         self.health = 100
         self.counter = 0
         self.wait_counter = 0
+        self.damage = 30
+        self.speed = 0
+        if inverse_speed:
+            self.image = pygame.transform.flip(self.image, True, False)
 
-        self.moving = False
-        self.dead = False
+        self.moving = True
+##        self.dead = False
         self.attack = False
+
+    @property
+    def dead(self) -> bool:
+        return self.health <= 0
 
     def movement(self, player_x: int):
         if self.attack or not self.moving or self.dead:
             return
         
-        if Player_X < self.rect.x:
-            self.direction = "Left"
-            self.rect.x -= self.speed
-        elif Player_X > self.rect.x:
-            self.direction = "Right"
-            self.rect.x += self.speed
+        if player_x < self.rect.x:
+            self.speed = -5
+        elif player_x > self.rect.x:
+            self.speed = 5
+        self.rect.x += self.speed
 
     def animation(self):
         self.counter += 1
 
-        if self.counter == 10:
-            if self.moving:
-                self.animation_int = 0 if self.animation_int == 1 else 1
+        if self.counter != 12:
+            return
+        if not self.moving:
+            return
 
-                if self.dead:
-                    self.moving = False
-                    self.wait_counter += 1
-                    if self.wait_counter == 8:
-                        self.x = random.randrange(0,1280)
-                        self.health = 100
-                        self.dead = False
-                        self.moving = False
-                        self.wait_counter = 0
-            else:
-                if self.dead and not self.moving:
-                    self.wait_counter += 1
-                    if self.wait_counter == 8:
-                        self.moving = True
-                        self.wait_counter = 0
+        self.counter = 0
+        self.animation_int = 0 if self.animation_int == 1 else 1
+        self.image = self.images[self.animation_int]
+        if self.speed < 0:
+            self.image = pygame.transform.flip(self.image, True, False)
 
-            self.counter = 0 
-
-    def __main__(self, player_x: int):
-        self.animation()
+    def update(self, player_x: int):
         self.movement(player_x)
+        self.animation()

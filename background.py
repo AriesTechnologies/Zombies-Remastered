@@ -5,7 +5,7 @@ import pygame
 
 # --- Background Class --- #
 
-class Background(pygame.sprite.Sprite):
+class Background(pygame.sprite.GroupSingle):
     def __init__(self):
         super().__init__()
 
@@ -13,6 +13,10 @@ class Background(pygame.sprite.Sprite):
 
         self.animation_int = 1
         self.images = sprites.load(("Outside_Mansion", "Inside_Mansion"))
-        self.image = self.images[self.animation_int]
-        self.rect = self.image.get_rect()
-    
+                
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = self.images[self.animation_int]
+        self.sprite.rect = self.sprite.image.get_rect()
+
+    def update(self):
+        self.sprite.image = self.images[self.animation_int]

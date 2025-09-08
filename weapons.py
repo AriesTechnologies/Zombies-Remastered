@@ -1,0 +1,57 @@
+# --- Imports --- #
+
+import pygame
+
+
+# --- Weapon Class --- #
+
+class Weapon:
+    _gun_dict = {0: "Handgun",
+                 1: "Shotgun",
+                 2: "Sniper",
+                 3: "Machine Gun",
+                 4: "Submachine Gun",
+                 5: "Assault Rifle"}
+    _damage_dict = {"Handgun": 35,
+                    "Shotgun": 90,
+                    "Sniper": 100,
+                    "Machine Gun": 55,
+                    "Submachine Gun": 45,
+                    "Assault Rifle": 60}
+        
+    def __init__(self):
+        self.weapon_int = 0
+
+    @property
+    def name(self) -> str:
+        return Weapon._gun_dict.get(self.weapon_int)
+
+    @property
+    def damage(self) -> int:
+        return Weapon._damage_dict.get(self.name,0)
+
+    def get(self):
+        self.weapon_int += 1
+        if self.weapon_int > 5:
+            self.weapon_int = 0
+
+
+# --- Bullet Class --- #
+
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, pos, inverse_speed: bool):
+        super().__init__()
+
+        self.image = pygame.image.load("Images/Bullet.png").convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+
+        self.speed = 30
+        if inverse_speed:
+            self.speed = -self.speed
+            self.image = pygame.transform.flip(self.image, True, False)
+
+    def update(self):
+        self.rect.x += self.speed
+        if self.rect.x > 1280 or self.rect.x < 0:
+            self.kill()

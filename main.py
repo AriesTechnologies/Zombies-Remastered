@@ -3,324 +3,229 @@
 import sys
 import pygame
 
-from background import *
-from enemy import *
-from player import*
-from sprites import *
+from background import Background
+from enemy import Enemy
+from player import Player
+from weapons import Bullet
+from fonts import text_obj
+from palette import BLACK, GREEN, RED, WHITE
+from buttons import Button
+from labels import Label
 
-pygame.init()
+pygame.key.set_repeat(225,35)
 
-# --- Game --- #                                   
 
-global Game
-Game = False
-global score
-score = 0
+# --- Variables --- #
 
-xsmallfont = pygame.font.SysFont("8-Bit-Madness", 15)
-smallfont = pygame.font.SysFont ("8-Bit-Madness", 30)
-mediumfont = pygame.font.SysFont ("8-Bit-Madness", 50)
-largefont = pygame.font.SysFont ("8-Bit-Madness", 95)
-xlargefont = pygame.font.SysFont ("8-Bit-Madness", 105)
+display_w = 1280
+display_h = 700
+pygame.display.set_caption("Zombies")
+display = pygame.display.set_mode((display_w,display_h), pygame.RESIZABLE)
 
-black = (0,0,0)
-red = (200,0,0)
-green = (50,165,0)
-dark_green = (50,135,0)
-white = (255,255,255)
-
-Display_w = 1280
-Display_h = 700
-Title = pygame.display.set_caption("Zombies")
-display = pygame.display.set_mode((Display_w,Display_h), pygame.RESIZABLE)
-
-clock = pygame.time.Clock()
-background = Background()
-player = Player()
-##enemy = Enemy()
-##enemy2 = Enemy()
-
-enemies = pygame.sprite.Group(Enemy(), Enemy())
-
-#Part of Message_To_Screen
-def Text_Objects(text: str, color, size: str):
-    if size == "xsmall":
-        TextSurface = xsmallfont.render (text, True, color)
-    elif size == "small":
-        TextSurface = smallfont.render (text, True, color)
-    elif size == "medium":
-        TextSurface = mediumfont.render (text, True, color)
-    elif size == "large":
-        TextSurface = largefont.render (text, True, color)
-    elif size == "xlarge":
-        TextSurface = xlargefont.render (text, True, color)
-    return TextSurface, TextSurface.get_rect()
-
-#Return a message to be printed to the screen
-def message_to_screen(msg, color, x_Pos, x_Displace=0, y_Displace=0, size="small"):
-    TextSurf, TextRect = Text_Objects(msg, color, size)
-    if x_Pos == 1:
-        TextRect.left = (int(Display_w/6)+x_Displace, int(Display_h/2)+y_Displace)
-    if x_Pos == 1.5:
-        TextRect = (int(Display_w/3)+x_Displace, int(Display_h/2)+y_Displace)
-    if x_Pos == 2:
-        TextRect.center = (int(Display_w/2)+x_Displace, int(Display_h/2)+y_Displace)
-    if x_Pos == 3:
-        TextRect.right = (int(Display_w/1.5)+x_Displace, int(Display_h/2)+y_Displace)
-    display.blit(TextSurf, TextRect)
-
-#Part of Button
-def text_to_button(msg, color, Button_X, Button_Y, Button_w, Button_h, size="small"):
-    textSurf, textRect  = Text_Objects(msg, color, size)
-    textRect.center = ((Button_X+(Button_w/2)), Button_Y+(Button_h/2))
+def message_to_screen(msg: str, color: pygame.Color, x_pos: int, x_Displace: int = 0, y_Displace: int = 0, size: str = "small"):
+    textSurf, textRect = text_obj(msg, color, size)
+    match x_pos:
+        case 1: textRect.left = (display_w//6+x_Displace, display_h//2+y_Displace)
+        case 1.5: textRect = (display_w//3+x_Displace, display_h//2+y_Displace)
+        case 2: textRect.center = (display_w//2+x_Displace, display_h//2+y_Displace)
+        case 3: textRect.right = (display_w//1.5+x_Displace, display_h//2+y_Displace)
+##    textRect.topleft = pos
     display.blit(textSurf, textRect)
 
-#Returns a Button to be printed to screen
-def Button(text, x, y, w, h, inactive_color, active_color, action):
-    Cursor = pygame.mouse.get_pos()
-    if x + w > Cursor[0] > x and y + h > Cursor[1] > y:
-        pygame.draw.rect(display, active_color, (x,y,w,h))
-    else:
-         pygame.draw.rect(display, inactive_color, (x,y,w,h))
-    text_to_button(text,white,x,y,w,h)
 
-#Options Screen
-def Options():
-    background.animation_int = 1
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit(0)
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
-                    break
-            
-        display.blit(background.image, background.rect.topleft)
-        message_to_screen("Instructions:", green, 2, 0, -250, size="xlarge")
-        message_to_screen("Right Arrow and Left Arrow Keys: Movement", white, 2, 0, -100, size="medium")
-        message_to_screen("Up Arrow Key: Jump", white, 2, 0, -25, size="medium")
-        message_to_screen("Down Arrow Key: Change Weapon", white, 2, 0, 50, size="medium")
-        message_to_screen("Shift Keys: Aim Weapon", white, 2, 0, 125, size="medium")
-        message_to_screen("Spacebar: Shoot Weapon", white, 2, 0, 200, size="medium")
-        message_to_screen("©2025 AriesTechnologies", white, 2, 0, 305, size="small")
-        pygame.display.flip()
+# --- Game --- #
 
-#Updates Screen
-def Updates():
-    background.animation_int = 1
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit(0)
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
-                    break
-            
-        display.blit(background.image, background.rect.topleft)
-        message_to_screen("Updates:", green, 2, 0, -250, size="xlarge")
-##        message_to_screen("Version 1.0.0 Alpha: Fully completed Zombies, bug fixes with weapons", white, 2, 0, -100, size="small")
-##        message_to_screen("Version 1.1.0 Alpha: Added in multiple zombies, bug fixes", white, 2, 0, -25, size="small")
-##        message_to_screen("Version 1.2.0 Alpha: Added in randomized player type, bug fixes with multiple zombie movements", white, 2, 0, 50, size="small")
-##        message_to_screen("Version 1.3.0 Alpha: Added in boundaries on the edges of the screen", white, 2, 0, 125, size="small")
-##        message_to_screen("Version 1.3.1 Alpha: Bug fixes with boundaries", white, 2, 0, 200, size="small")
-        message_to_screen("©2025 AriesTechnologies", white, 2, 0, 305, size="small")
-        pygame.display.flip()
-
-#Title Screen
-def __title__():
-    background.animation_int = 1
-    global Game
-    while not Game:
-        Cursor = pygame.mouse.get_pos()
-        Click = pygame.mouse.get_pressed()
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit(0)
-            if 536+208 > Cursor[0] > 536 and 371+58 > Cursor[1] > 371:
-                if Click[0] == 1:
-                    Game = True
-                    player.moving = True
-                    enemy.moving = True
-                    enemy2.moving = True
-            elif 540+200 > Cursor[0] > 540 and 440+50 > Cursor[1] > 440:
-                if Click[0] == 1:
-                    Options()
-            elif 540+200 > Cursor[0] > 540 and 505+50 > Cursor[1] > 505:
-                if Click[0] == 1:
-                    Updates()
-
-        display.blit(background.image, background.rect.topleft)
-        message_to_screen("Zombies", green, 2, 0, -250, size="xlarge")
-        pygame.draw.rect(display, white, (535,370,210,60))
-        pygame.draw.rect(display, white, (535,435,210,60))
-        pygame.draw.rect(display, white, (535,500,210,60))
-        Button("Play", 536, 371, 208, 58, black, red, action="Play")
-        Button("Options", 536, 436, 208, 58, black, red, action="Options")
-        Button("Updates", 536, 501, 208, 58, black, red, action="Updates")
-        message_to_screen("©2025 AriesTechnologies", white, 2, 0, 305, size="small")
-        pygame.display.flip()
-        clock.tick(60)
-
-#Pause Screen
-def Pause():
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit(0)
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
-                    break
-
-        display.fill(black)
-        message_to_screen("Paused", red, 2, 0, 0, size="large")
-        message_to_screen(f"Score: {score}", white, 2, 0, -75, size="medium")
-        pygame.display.flip()
-        clock.tick(10)
-
-#Main Game
-def __main__():
-    background.animation_int = 0
-    global Score
-    global Game
-    Title = pygame.display.set_caption(f"Zombies FPS: {clock.get_fps()}")
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit(0)
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                Pause()
-
-    player.events(event)
-
-##    Runs Player movement, animation, etc.
-    player.__main__()
-    enemy.__main__(player.rect.x)
-    enemy2.__main__(player.rect.x)
-
-    #Checks for Zombie touching Player
-    if player.rect.x + 100 >= enemy.rect.x >= player.rect.x and not enemy.dead:
-##        player.damaged = True
-        enemy.moving = False
-        enemy.attack = True
-        if player.damaged:
-            player.damaged_counter += 1
-            if player.damaged_counter >= 8:
-                player.health -= enemy.damage
-##                player.damaged = False
-                player.damaged_counter = 0
-                if player.health <= 0:
-                    enemy.moving = False
-                    player.moving = False
-                    Game = False
-    else:
-##        player.damaged = False
-        enemy.moving = True
-        enemy.attack = False
-##        if player.health < player.max_health:
-##            player.regen()
-
-    if player.rect.x + 100 >= enemy2.rect.x >= player.rect.x and not enemy2.dead:
-##        player.damaged = True
-        enemy2.moving = False
-        enemy2.attack = True
-        if player.damaged:
-            player.damaged_counter += 1
-            if player.damaged_counter >= 8:
-                player.health -= enemy.damage
-##                player.damaged = False
-                player.damaged_counter = 0
-                if player.health <= 0:
-                    enemy2.moving = False
-                    player.moving = False
-                    Game = False
-    else:
-##        player.damaged = False
-        enemy2.moving = True
-        enemy2.attack = False
-##        if player.health < player.max_health:
-##        player.regen()
-
-    #Checks for bullet touching Enemy
-    if enemy.X < player.bullet_X < enemy.X+116 and enemy.Y < player.bullet_Y < enemy.Y+140 and not enemy.dead and not player.bullet_dead:
-        if player.shot_counter >= 8:
-            enemy.health -= player.weapon_damage
-            player.bullet_counter = 0
-            player.shot_counter = 0
-            del player.bullets_list[:]
-            player.bullet_dead = True
-            if enemy.health <= 0:
-                enemy.dead = True
-                enemy.moving = False
-                Score += 50
-
-    if enemy2.X < player.bullet_X < enemy2.X+116 and enemy2.Y < player.bullet_Y < enemy2.Y+140 and not enemy2.dead and not player.bullet_dead:
-        if player.shot_counter >= 8:
-            enemy2.health -= player.weapon_damage
-            player.bullet_counter = 0
-            player.shot_counter = 0
-            del player.bullets_list[:]
-            player.bullet_dead = True
-            if enemy2.health <= 0:
-                enemy2.dead = True
-                enemy2.moving = False
-                Score += 50
-
-    #Redisplay Background
-    display.blit(background.image, background.rect.topleft)
-
-    #Redisplay Player
-    if player.direction == "Right":
-        display.blit(player.image, player.rect.topleft)
-    elif player.direction == "Left":
-        display.blit(pygame.transform.flip(player.image, True, False), player.rect.topleft)
-
-    #Redisplay Bullet
-    if player.bullet_counter == 1:
-        if player.bullet_direction == "Right":
-            display.blit(player.bullet[0], (player.bullet_X+110, player.bullet_Y))
-        elif player.bullet_direction == "Left":
-            display.blit(pygame.transform.flip(player.bullet[0], True, False), (player.bullet_X, player.bullet_Y))
-
-    #Redisplay Zombie
-    for enemy in enemies:
-        if enemy.dead:
-            continue
-        if enemy.direction == "Right":
-            display.blit(enemy.image, enemy.rect.topleft)
-        elif enemy.direction == "Left":
-            display.blit(pygame.transform.flip(enemy.image, True, False), enemy.rect.topleft)
-            
-    message_to_screen(f"Score: {score}", white, 2, -575, -325, size="small")
-
-    pygame.display.flip()
-    clock.tick(60)
-
-#After Player Dead
-def Death_Screen():
-    player.animation_int = 0
-##    player.current = sprites.Enemy_Walking_List
-    display.fill(black)
-    display.blit(player.images[player.animation_int], (Display_w/2-58, player.ground))
-    message_to_screen("Game Over!", red, 2, 0, 0, size="xlarge")
-    message_to_screen(f"Score: {score}", white, 2, 0, 75, size="medium") #Add score later
-    pygame.display.flip()
-
-    while not Game:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit(0)
-        clock.tick(60)
-
-while not Game:
-    __title__()
+class Game:
+    FPS = 60
     
-while Game:
-    __main__()
+    def __init__(self):
+        self.clock = pygame.time.Clock()
 
-Death_Screen()
+        self.menus_path = [self.title_menu]
+        self.menu = pygame.sprite.Group()
+
+        self.round = 1
+        self.round_enemy_amount = 5
+        self.score = 0
+
+        self.background = Background()
+        self.player = Player()
+
+        self.enemies = pygame.sprite.Group()
+        self.bullets = pygame.sprite.Group()
+
+        self.quit = False
+        self.paused = False
+        self.game = False
+
+        self.score_sprite_small = Label(f"Score: {self.score}", WHITE, "small")
+
+        self.score_sprite = Label(f"Score: {self.score}", WHITE, "medium")
+
+        self.menus_path[-1]()
+
+    def title_menu(self):
+        self.menu.empty()
+        lbl = Label("Zombies", GREEN,  "xlarge") #(0,0), 
+        lbl.rect.x = display_w//2-lbl.rect.w//2
+        self.menu.add(lbl)
+
+        btnTexts = ("Play", "Options", "Updates")
+        btnRect = pygame.Rect(536,371,208,58)
+        for idx,text in enumerate(btnTexts):
+            btn = Button(btnRect.size, text)
+            btn.rect.x = btnRect.x
+            btn.rect.y = btnRect.y+btn.rect.h*idx
+            self.menu.add(btn)
+
+    def options_menu(self):
+        self.menu.empty()
+        lbl = Label("Instructions:", GREEN, "xlarge") #(0,0), 
+        lbl.rect.x = display_w//2-lbl.rect.w//2
+        self.menu.add(lbl)
+
+        lbls = ("Right Arrow and Left Arrow Keys: Movement",
+                "Up Arrow Key: Jump",
+                "Down Arrow Key: Change Weapon",
+                "Shift Keys: Aim Weapon",
+                "Spacebar: Shoot Weapon"
+                )
+
+        for index,label_text in enumerate(lbls):
+            lbl = Label(label_text, WHITE, "medium") #(0,0), 
+            lbl.rect.x = display_w//2-lbl.rect.w//2
+            lbl.rect.y = 50*index+150 #Insert random number currently
+            self.menu.add(lbl)
+
+    def updates_menu(self):
+        self.menu.empty()
+        lbl = Label("Updates:", GREEN, "xlarge") #(0,0), 
+        lbl.rect.x = display_w//2-lbl.rect.w//2
+        self.menu.add(lbl)
+
+    def paused_menu(self):
+        self.menu.empty()
+        lbl = Label("Paused", RED, "large") #(0,0), 
+        lbl.rect.center = display_w//2, display_h//2
+        self.menu.add(lbl)
+
+        lbl1 = Label(f"Score: {self.score}", WHITE, "medium") #(0,0), 
+        lbl1.rect.x = display_w//2-lbl1.rect.w//2
+        lbl1.rect.y = display_h//2-lbl.rect.h
+        self.menu.add(lbl1)
+
+    def events(self):
+        event = pygame.event.poll()
+        if event.type == pygame.QUIT:
+            self.quit = True
+        elif event.type == pygame.KEYDOWN:
+            if self.game and event.key == pygame.K_ESCAPE:
+                self.game = False
+                self.paused = True
+                self.menus_path.append(self.paused_menu)
+                self.menus_path[-1]()
+            elif not self.game and event.key in {pygame.K_ESCAPE, pygame.K_BACKSPACE}:
+                if len(self.menus_path) > 1:
+                    del self.menus_path[-1]
+                if self.paused:
+                    del self.menus_path[-1]
+                    self.paused = False
+                    self.game = True
+                if len(self.menus_path) > 0:
+                    self.menus_path[-1]()
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if not self.game and event.button == 1:
+                buttons = tuple(self.menu.sprites())[1:]
+                if buttons[0].active:
+                    self.menus_path.clear()
+                    self.game = True
+                    self.background.animation_int = 0
+                    self.background.update()
+                elif buttons[1].active:
+                    self.menus_path.append(self.options_menu)
+                    self.menus_path[-1]()
+                elif buttons[2].active:
+                    self.menus_path.append(self.updates_menu)
+                    self.menus_path[-1]()
+                    
+        if not self.game:
+            buttons = tuple(self.menu.sprites())[1:]
+            cur_pos = pygame.mouse.get_pos()
+            for button in buttons:
+                button.collide(cur_pos)
+                button.update()
+            return
+        if self.player.dead:
+            return
+                
+        self.player.events(event)
+        if self.player.shooting and len(self.bullets) == 0:
+            self.bullets.add(Bullet(self.player.sprite.rect.center,(self.player.direction == "Left")))
+        if len(self.enemies) == 0:
+            self.enemies.add(Enemy((self.player.direction == "Left")))
+
+        for bullet in self.bullets:
+            bullet.update()
+            
+        for enemy in self.enemies:
+            enemy.update(self.player.sprite.rect.x)
+
+        for enemy in self.enemies: #Checks for bullet touching Enemy
+            if enemy.dead:
+                continue
+            if pygame.sprite.groupcollide(self.enemies,self.bullets,False,True):
+                enemy.health -= self.player.weapon.damage
+                if not enemy.dead:
+                    continue
+                
+                enemy.kill()
+                self.score += 50
+
+        for enemy in self.enemies: #Checks for Zombie touching Player
+            enemy.attack = pygame.sprite.spritecollide(enemy,self.player,False)
+            enemy.moving = not enemy.attack
+            if not enemy.attack:
+                continue
+            
+            self.player.health -= enemy.damage
+            if self.player.dead:
+                self.player.die()
+
+    def draw(self):
+        display.fill(BLACK)
+        self.background.draw(display)
+
+        if not self.game:
+            if self.paused:
+                display.fill(BLACK)
+            self.menu.draw(display)
+            if not self.paused:
+                message_to_screen("©2025 AriesTechnologies", WHITE, 2, 0, 305, size="small")
+        else:
+            if self.player.dead:
+                display.fill(BLACK)
+                self.player.draw(display)
+                message_to_screen("Game Over!", RED, 2, 0, 0, size="xlarge")
+                message_to_screen(f"Score: {self.score}", WHITE, 2, 0, 75, size="medium") #Add score later
+            else:
+                self.player.draw(display)
+                self.bullets.draw(display)
+                self.enemies.draw(display)
+##                message_to_screen(f"Score: {self.score}", WHITE, (0,0), size="small")
+                message_to_screen(f"Score: {self.score}", WHITE, 2, -575, -325, size="small")
+
+        pygame.display.flip()
+
+    def main(self):
+        while not self.quit:
+            pygame.display.set_caption(f"Zombies FPS: {round(self.clock.get_fps(),2)}")
+            self.events()
+            self.draw()
+            self.clock.tick(Game.FPS)
+
+        pygame.quit()
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    Game().main()
