@@ -3,14 +3,11 @@
 import sys
 import pygame
 
+from gfx import Button, Label, Palette, text_obj, BLACK, GREEN, RED, WHITE
 from background import Background
 from enemy import Enemy
 from player import Player
 from weapons import Bullet
-from fonts import text_obj
-from palette import BLACK, GREEN, RED, WHITE
-from buttons import Button
-from labels import Label
 
 pygame.key.set_repeat(225,35)
 
@@ -19,8 +16,12 @@ pygame.key.set_repeat(225,35)
 
 display_w = 1280
 display_h = 700
+display_size = (display_w,display_h)
 pygame.display.set_caption("Zombies")
-display = pygame.display.set_mode((display_w,display_h), pygame.RESIZABLE)
+display = pygame.display.set_mode(display_size, pygame.RESIZABLE)
+
+
+# --- Definitions --- #
 
 def message_to_screen(msg: str, color: pygame.Color, x_pos: int, x_Displace: int = 0, y_Displace: int = 0, size: str = "small"):
     textSurf, textRect = text_obj(msg, color, size)
@@ -50,7 +51,6 @@ class Game:
 
         self.background = Background()
         self.player = Player()
-
         self.enemies = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
 
