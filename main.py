@@ -45,9 +45,10 @@ class Game:
         self.player_regen_timer = None
 
         self.quit = False
+        self.debug = True
         self.state = State.MENU
-        self.round = 1
-        self.round_enemy_amount = 2
+##        self.round = 1
+        self.round_enemy_amount = 1
         self.score = 0
 
         self.ui = pygame.sprite.Group()
@@ -55,6 +56,8 @@ class Game:
         self.bullets = pygame.sprite.Group()
         self.background = Background()
         self.player = Player()
+
+        self.debug_sprite = Label("FPS: {round(self.clock.get_fps(),2)}", WHITE, TextSize.SMALL, Align.RIGHT, (display_w-5,5))
         
         self.copyright_sprite = Label("©2025 AriesTechnologies", WHITE, TextSize.SMALL)
         self.copyright_sprite.rect.midbottom = display_w//2, display_h-5
@@ -123,6 +126,9 @@ class Game:
         lbl = Label(f"Score: {self.score}", WHITE, TextSize.SMALL)
         lbl.rect.topleft = (5,5)
         self.ui.add(lbl)
+
+        if self.debug:
+            self.ui.add(self.debug_sprite)
 
         self.enemy_attack_timer = pygame.time.set_timer(ATTACK_EVENT, 750, loops=0) #Every 3/4 seconds
         self.player_regen_timer = pygame.time.set_timer(REGEN_EVENT, 1000, loops=0) #Every second
@@ -210,6 +216,12 @@ class Game:
         event = pygame.event.poll()
         if event.type == pygame.QUIT:
             self.quit = True
+        elif event.type == pygame.K_F1:
+            self.debug = not self.debug
+            if self.debug:
+                self.ui.add(self.debug_sprite)
+            else:
+                self.ui.remove(self.debug_sprite)
             
         match self.state:
             case State.MENU | State.PAUSED: self.menu_events(event)
@@ -226,11 +238,9 @@ class Game:
 
         for bullet in self.bullets:
             bullet.update()
-            
-        for enemy in self.enemies:
-            enemy.update(self.player.sprite.rect.x)
 
         for enemy in self.enemies: #Checks for bullet touching Enemy
+            enemy.update(self.player.sprite.rect.x)
             if pygame.sprite.groupcollide(self.enemies,self.bullets,False,True):
                 enemy.health -= self.player.weapon.damage
                 if not enemy.dead:
@@ -254,7 +264,8 @@ class Game:
 
     def main(self):
         while not self.quit:
-            pygame.display.set_caption(f"{TITLE} (FPS: {round(self.clock.get_fps(),2)})")
+            if self.debug:
+                self.debug_sprite.text = f"FPS: {round(self.clock.get_fps(),2)}"
             self.events()
             self.update()
             self.draw()
