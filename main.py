@@ -6,8 +6,8 @@ from enum import Enum, auto
 
 from gfx import Button, Label, Align, Palette, Text, TextSize, BLACK, GREEN, RED, WHITE
 from background import Background
-from enemy import Enemy
-from player import Player
+from enemy import Enemy, ATTACK_EVENT
+from player import Player, REGEN_EVENT
 from weapons import Bullet
 
 pygame.key.set_repeat(225,35)
@@ -40,10 +40,14 @@ class Game:
     def __init__(self):
         self.clock = pygame.time.Clock()
 
+        #Timers
+        self.enemy_attack_timer = None
+        self.player_regen_timer = None
+
         self.quit = False
         self.state = State.MENU
         self.round = 1
-        self.round_enemy_amount = 5
+        self.round_enemy_amount = 2
         self.score = 0
 
         self.ui = pygame.sprite.Group()
@@ -120,6 +124,9 @@ class Game:
         lbl.rect.topleft = (5,5)
         self.ui.add(lbl)
 
+        self.enemy_attack_timer = pygame.time.set_timer(ATTACK_EVENT, 750, loops=0) #Every 3/4 seconds
+        self.player_regen_timer = pygame.time.set_timer(REGEN_EVENT, 1000, loops=0) #Every second
+
     def paused_menu(self):
         self.ui.empty()
         lbl = Label("Paused", RED, TextSize.LARGE)
@@ -143,6 +150,9 @@ class Game:
         lbl1.rect.midtop = lbl.rect.midbottom
         lbl1.rect.y += lbl1.rect.height
         self.ui.add(lbl1)
+
+        self.enemy_attack_timer = pygame.time.set_timer(ATTACK_EVENT, 0, loops=0)
+        self.player_regen_timer = pygame.time.set_timer(REGEN_EVENT, 0, loops=0)
         
     def menu_events(self, event: pygame.event.Event):
         buttons = filter(lambda sprite: isinstance(sprite, Button), self.ui)
@@ -178,7 +188,20 @@ class Game:
                     self.state = State.PAUSED
                     self.menus_path.append(self.paused_menu)
                     self.menus_path[-1]()
+        elif event.type == ATTACK_EVENT:
+            for enemy in self.enemies: #Checks for Zombie touching Player
+                enemy.attack = pygame.sprite.spritecollide(enemy,self.player,False)
+                enemy.moving = not enemy.attack
+                if not enemy.attack:
+                    continue
                 
+                self.player.health -= enemy.damage
+
+##            print(self.player.health, enemy.attack)
+            if self.player.dead:
+                self.menus_path.append(self.game_over)
+                self.menus_path[-1]()
+             
         if self.player.dead:
             return
         self.player.events(event)
@@ -195,10 +218,10 @@ class Game:
     def update(self):
         if self.menu or self.paused or self.player.dead:
             return
-                
+        
         if self.player.shooting and len(self.bullets) == 0:
             self.bullets.add(Bullet(self.player.sprite.rect.center,(self.player.direction == "Left")))
-        if len(self.enemies) == 0:
+        if len(self.enemies) != self.round_enemy_amount:
             self.enemies.add(Enemy((self.player.direction == "Left")))
 
         for bullet in self.bullets:
@@ -215,18 +238,6 @@ class Game:
                 
                 enemy.kill()
                 self.score += 50
-
-        for enemy in self.enemies: #Checks for Zombie touching Player
-            enemy.attack = pygame.sprite.spritecollide(enemy,self.player,False)
-            enemy.moving = not enemy.attack
-            if not enemy.attack:
-                continue
-            
-            self.player.health -= enemy.damage
-            
-        if self.player.dead:
-            self.menus_path.append(self.game_over)
-            self.menus_path[-1]()
 
     def draw(self):
         display.fill(BLACK)

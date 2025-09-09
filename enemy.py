@@ -4,6 +4,14 @@ import sprites
 import random
 import pygame
 
+__all__ = ("Enemy", "ATTACK_EVENT")
+
+
+# --- Variables --- #
+
+ATTACK_EVENT = pygame.event.custom_type()
+
+
 # --- Enemy Class --- #
 
 class Enemy(pygame.sprite.Sprite):

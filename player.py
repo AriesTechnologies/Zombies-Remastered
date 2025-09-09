@@ -3,6 +3,13 @@
 import sprites
 import pygame
 
+__all__ = ("Player", "REGEN_EVENT")
+
+
+# --- Variables --- #
+
+REGEN_EVENT = pygame.event.custom_type()
+
 
 # --- Player Class --- #
 
@@ -145,15 +152,13 @@ class Player(pygame.sprite.GroupSingle):
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 self.shooting = False
+
+        elif event.type == REGEN_EVENT:
+            self.regen()
                 
         self.gravity()
         self.change_weapon()
         self.animation()
-        
-        if not self.damaged:
-            return
-        
-        self.regen()
 
     def update(self):
         pass
