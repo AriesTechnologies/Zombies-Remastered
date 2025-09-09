@@ -1,7 +1,7 @@
 # --- Imports --- #
 
 import pygame
-from typing import Self
+from typing import Self, Callable
 from .palette import Palette
 from .colors import BLACK, WHITE, RED
 from .fonts import font, Text, TextSize
@@ -14,7 +14,7 @@ class Button(pygame.sprite.Sprite):
 
     _palette: Palette = Palette(BLACK, WHITE, RED)
     
-    def __init__(self, size: tuple[int,int], text: str = "") -> Self:
+    def __init__(self, size: tuple[int,int], text: str = "", *, onclick: Callable = None) -> Self:
         super().__init__()
 
         self.image = pygame.Surface(size)
@@ -22,6 +22,7 @@ class Button(pygame.sprite.Sprite):
 
         self._active = False
         self._text = text
+        self.onclick = onclick
 
         self.update()
         

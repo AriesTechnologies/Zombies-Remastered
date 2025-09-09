@@ -1,7 +1,7 @@
 # --- Imports --- #
 
 from .buttons import Button
-from .labels import Label, Alignment
-from .palette import *
-from .fonts import *
-from .colors import *
+from .labels import Label, Align
+from .palette import Palette
+from .fonts import font, Text, TextSize
+from .colors import BLACK, WHITE, RED, GREEN, DARK_GREEN
