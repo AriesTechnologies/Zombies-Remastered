@@ -14,19 +14,14 @@ REGEN_EVENT = pygame.event.custom_type()
 # --- Player Class --- #
 
 class Player(pygame.sprite.GroupSingle):
+    _characters = ("Nerd", "Athlete", "ValleyGirl", "Rapp")
+    
     def __init__(self):
         super().__init__()
 
         import random
         from weapons import Weapon
         
-        character = ""
-        match random.randrange(0,4):
-            case 0: character = "Nerd"
-            case 1: character = "Athlete"
-            case 2: character = "ValleyGirl"
-            case 3: character = "Rapp"
-
         self.__walking_list,\
         self.__shooting_list,\
         self.__shooting_HG_list,\
@@ -34,29 +29,27 @@ class Player(pygame.sprite.GroupSingle):
         self.__shooting_SR_list,\
         self.__shooting_MG_list,\
         self.__shooting_SMG_list,\
-        self.__shooting_AR_list = sprites.load_all(character)
+        self.__shooting_AR_list = sprites.load_all(random.choice(Player._characters))
         
-        self.animation_int = 0
+        self.__animation_int = 0
 
         self.sprite = pygame.sprite.Sprite()
-        self.images = self.__walking_list
-        self.sprite.image = self.images[self.animation_int]
+        self.__images = self.__walking_list
+        self.sprite.image = self.__images[self.__animation_int]
         self.sprite.rect = self.sprite.image.get_rect()
 
-        self.ground = 530
+        self.__ground = 530
         self.sprite.rect.x = 640
-        self.sprite.rect.y = self.ground
+        self.sprite.rect.y = self.__ground
         
-        self.counter = 0
-        self.speed = 0 #10
+        self.__counter = 0
+        self.speed = 5
         self.jump_height = 150
         self.gravity_speed = 5
         self.health = 100
         self.max_health = 100
-##        self.damaged_counter = 0
         self.weapon = Weapon()
-
-##        self.moving = False
+        
         self.aiming = False
         self.shooting = False
         self.direction = "Right"
@@ -70,79 +63,99 @@ class Player(pygame.sprite.GroupSingle):
         return self.health < self.max_health
 
     def die(self):
-        self.animation_int = 0
-        self.images = self.__walking_list
-        self.sprite.image = self.images[self.animation_int]
+        self.__animation_int = 0
+        self.__images = self.__walking_list
+        self.sprite.image = self.__images[self.__animation_int]
 
-    def animation(self): #Edit to include checks for gun type and walk whilst aiming, etc.
-        self.counter += 1
-        if self.counter != 12:
-            return
-        self.counter = 0
-        self.animation_int = 0 if (self.animation_int == 1) or (self.speed == 0) else 1
-        self.sprite.image = self.images[self.animation_int]
-        if self.direction != "Left":
-            return
-        self.sprite.image = pygame.transform.flip(self.images[self.animation_int], True, False)
+    def __animation(self):
+        self.__counter += 1
+        if self.__counter == 12:
+            self.__counter = 0
+            self.__animation_int = 0 if (self.__animation_int == 1) or (self.speed == 0) else 1
+        self.sprite.image = pygame.transform.flip(self.__images[self.__animation_int],
+                                                  (self.direction == "Left"), False)
             
-    def jump(self):
-        if self.sprite.rect.y < self.ground:
+    def __jump(self):        
+        if self.sprite.rect.y < self.__ground:
             return
-        self.sprite.rect.y -= self.jump_height
+        self.__move(up=True)
                 
-    def gravity(self):
-        if self.sprite.rect.y >= self.ground:
+    def __gravity(self):
+        if self.sprite.rect.y >= self.__ground:
             return
         self.sprite.rect.y += self.gravity_speed
 
-    def regen(self):
+    def __regen(self):
         if self.dead or not self.damaged:
             return
         self.health += 5
                     
-    def change_weapon(self):
+    def __change_weapon(self):
         if not self.aiming:
-            self.images = self.__walking_list
-            return
+            self.__images = self.__walking_list
+        else:
+            match self.weapon.name:
+                case "Handgun": self.__images = self.__shooting_HG_list
+                case "Shotgun": self.__images = self.__shooting_SG_list
+                case "Sniper": self.__images = self.__shooting_SR_list
+                case "Machine Gun": self.__images = self.__shooting_MG_list
+                case "Submachine Gun": self.__images = self.__shooting_SMG_list
+                case "Assault Rifle": self.__images = self.__shooting_AR_list
+                case _: self.__images = self.__shooting_list
 
-        match self.weapon.name:
-            case "Handgun": self.images = self.__shooting_HG_list
-            case "Shotgun": self.images = self.__shooting_SG_list
-            case "Sniper": self.images = self.__shooting_SR_list
-            case "Machine Gun": self.images = self.__shooting_MG_list
-            case "Submachine Gun": self.images = self.__shooting_SMG_list
-            case "Assault Rifle": self.images = self.__shooting_AR_list
-            case _: self.images = self.__shooting_list
+        self.__animation_int = 0
+        self.sprite.image = pygame.transform.flip(self.__images[self.__animation_int],
+                                                  (self.direction == "Left"), False)
+
+    def __move(self, up=False, down=False, left=False, right=False):
+        if right:
+            self.direction = "Right"
+            self.sprite.rect.x += self.speed
+        if left:
+            self.direction = "Left"
+            self.sprite.rect.x -= self.speed
+        if down:
+            self.sprite.rect.y += self.gravity_speed
+        if up:
+            self.sprite.rect.y -= self.jump_height
+
+        # controls the object such that it cannot leave the screen's viewpoint
+        if self.sprite.rect.right > 1280:
+            self.sprite.rect.x = 0
+        if self.sprite.rect.x < 0:
+            self.sprite.rect.right = 1280
+        if self.sprite.rect.y >= self.__ground:
+            self.sprite.rect.y = self.__ground
+
+        self.__animation()
 
     def events(self, event: pygame.event.Event):
         if self.dead:
             return
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                self.jump()
-            if event.key == pygame.K_RIGHT:
-                self.direction = "Right"
-                if self.sprite.rect.x < 1280:
-                    self.speed = 12
-                    self.sprite.rect.x += self.speed
-            if event.key == pygame.K_LEFT:
-                self.direction = "Left"
-                if self.sprite.rect.x > 0:
-                    self.speed = -12
-                    self.sprite.rect.x += self.speed
-            if event.key in {pygame.K_RSHIFT, pygame.K_LSHIFT}\
-            or (event.mod in {pygame.KMOD_RSHIFT, pygame.KMOD_LSHIFT}):
+        
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP]:
+            self.__move(up=True)
+        if keys[pygame.K_LEFT]:
+            self.__move(left=True)
+        if keys[pygame.K_RIGHT]:
+            self.__move(right=True)
+                
+        if event.type == pygame.KEYDOWN:      
+            if event.key in {pygame.K_RSHIFT, pygame.K_LSHIFT}:
                 self.aiming = True
-            if self.aiming and (event.key == pygame.K_SPACE):
+                self.__change_weapon()
+            if (event.mod in {pygame.KMOD_RSHIFT, pygame.KMOD_LSHIFT})\
+            and (event.key == pygame.K_SPACE):
                 self.shooting = self.aiming
             if event.key == pygame.K_DOWN:
                 self.weapon.get()
+                self.__change_weapon()
                 
         elif event.type == pygame.KEYUP:
-            if event.key in {pygame.K_LEFT, pygame.K_RIGHT}:
-                self.speed = 0
             if event.key in {pygame.K_RSHIFT, pygame.K_LSHIFT}:
                 self.aiming = False
+                self.__change_weapon()
             if event.key == pygame.K_SPACE:
                 self.shooting = False
 
@@ -154,11 +167,9 @@ class Player(pygame.sprite.GroupSingle):
                 self.shooting = False
 
         elif event.type == REGEN_EVENT:
-            self.regen()
+            self.__regen()
                 
-        self.gravity()
-        self.change_weapon()
-        self.animation()
+        self.__gravity()
 
     def update(self):
         pass

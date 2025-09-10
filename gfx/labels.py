@@ -24,13 +24,14 @@ class Label(pygame.sprite.Sprite):
         self.color = color
         self.text_size = text_size
         self.align = align
+        self.pos = pos
         
         self.image, self.rect  = Text(self._text, self.color, self.text_size)
 
         match self.align:
-            case Align.LEFT: self.rect.topleft = pos
-            case Align.CENTER: self.rect.midtop = pos
-            case Align.RIGHT: self.rect.topright = pos
+            case Align.LEFT: self.rect.topleft = self.pos
+            case Align.CENTER: self.rect.midtop = self.pos
+            case Align.RIGHT: self.rect.topright = self.pos
 
     @property
     def text(self) -> str:
@@ -40,6 +41,11 @@ class Label(pygame.sprite.Sprite):
     def text(self, text: str) -> str:
         self._text = text
         self.image, self.rect  = Text(self._text, self.color, self.text_size)
+
+        match self.align:
+            case Align.LEFT: self.rect.topleft = self.pos
+            case Align.CENTER: self.rect.midtop = self.pos
+            case Align.RIGHT: self.rect.topright = self.pos
 
     def collide(self, pos) -> None: pass
     def update(self) -> None: pass
