@@ -231,7 +231,7 @@ class Game:
         if self.menu or self.paused or self.player.dead:
             return
         
-        if self.player.shooting and len(self.bullets) == 0:
+        if self.player.shooting and (self.player.weapon.max_bullets > len(self.bullets)):
             self.bullets.add(Bullet(self.player.sprite.rect.center,(self.player.direction == "Left")))
         if len(self.enemies) != self.round_enemy_amount:
             self.enemies.add(Enemy((self.player.direction == "Left")))
