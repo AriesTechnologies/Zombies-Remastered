@@ -2,7 +2,7 @@
 
 import sys
 import pygame
-from enum import Enum, auto
+from enum import IntEnum, auto
 
 from gfx import Button, Label, Align, Palette, Text, TextSize, BLACK, GREEN, RED, WHITE
 from background import Background
@@ -26,7 +26,7 @@ display = pygame.display.set_mode(display_size, pygame.RESIZABLE)
 
 # --- Game State Class --- #
 
-class State(Enum):
+class State(IntEnum):
     MENU = auto()
     GAME = auto()
     PAUSED = auto()
@@ -57,6 +57,7 @@ class Game:
         self.background = Background()
         self.player = Player()
 
+        self.score_sprite = Label(f"Score: {self.score}", WHITE, TextSize.SMALL, Align.LEFT, (5,5))
         self.debug_sprite = Label("FPS: {round(self.clock.get_fps(),2)}", WHITE, TextSize.SMALL, Align.RIGHT, (display_w-5,5))
         
         self.copyright_sprite = Label("©2025 AriesTechnologies", WHITE, TextSize.SMALL)
@@ -123,9 +124,9 @@ class Game:
         self.background.animation_int = 0
         self.background.update()
 
-        lbl = Label(f"Score: {self.score}", WHITE, TextSize.SMALL)
-        lbl.rect.topleft = (5,5)
-        self.ui.add(lbl)
+##        lbl = Label(f"Score: {self.score}", WHITE, TextSize.SMALL)
+##        self.score_sprite.rect.topleft = (5,5)
+        self.ui.add(self.score_sprite)
 
         if self.debug:
             self.ui.add(self.debug_sprite)
@@ -248,6 +249,7 @@ class Game:
                 
                 enemy.kill()
                 self.score += 50
+                self.score_sprite.text = f"Score: {self.score}"
 
     def draw(self):
         display.fill(BLACK)

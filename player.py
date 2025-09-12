@@ -2,6 +2,7 @@
 
 import sprites
 import pygame
+from weapons import Weapon
 
 __all__ = ("Player", "REGEN_EVENT")
 
@@ -20,7 +21,7 @@ class Player(pygame.sprite.GroupSingle):
         super().__init__()
 
         import random
-        from weapons import Weapon
+        from weapons import weapons
         
         self.__walking_list,\
         self.__shooting_list,\
@@ -48,7 +49,9 @@ class Player(pygame.sprite.GroupSingle):
         self.gravity_speed = 5
         self.health = 100
         self.max_health = 100
-        self.weapon = Weapon()
+
+        self.__weapon_int = 0
+        self.weapons = weapons
         
         self.aiming = False
         self.shooting = False
@@ -61,6 +64,14 @@ class Player(pygame.sprite.GroupSingle):
     @property
     def damaged(self) -> bool:
         return self.health < self.max_health
+
+    @property
+    def jumped(self) -> bool:
+        return self.sprite.rect.y < self.__ground
+
+    @property
+    def weapon(self) -> Weapon:
+        return self.weapons[self.__weapon_int]
 
     def die(self):
         self.__animation_int = 0
@@ -94,13 +105,13 @@ class Player(pygame.sprite.GroupSingle):
         if not self.aiming:
             self.__images = self.__walking_list
         else:
-            match self.weapon.name:
-                case "Handgun": self.__images = self.__shooting_HG_list
-                case "Shotgun": self.__images = self.__shooting_SG_list
-                case "Sniper": self.__images = self.__shooting_SR_list
-                case "Machine Gun": self.__images = self.__shooting_MG_list
-                case "Submachine Gun": self.__images = self.__shooting_SMG_list
-                case "Assault Rifle": self.__images = self.__shooting_AR_list
+            match self.__weapon_int:
+                case 0: self.__images = self.__shooting_HG_list
+                case 1: self.__images = self.__shooting_SG_list
+                case 2: self.__images = self.__shooting_SR_list
+                case 3: self.__images = self.__shooting_MG_list
+                case 4: self.__images = self.__shooting_SMG_list
+                case 5: self.__images = self.__shooting_AR_list
                 case _: self.__images = self.__shooting_list
 
         self.__animation_int = 0
@@ -116,7 +127,7 @@ class Player(pygame.sprite.GroupSingle):
             self.sprite.rect.x -= self.speed
         if down:
             self.sprite.rect.y += self.gravity_speed
-        if up:
+        if up and not self.jumped:
             self.sprite.rect.y -= self.jump_height
 
         # controls the object such that it cannot leave the screen's viewpoint
@@ -149,7 +160,7 @@ class Player(pygame.sprite.GroupSingle):
             and (event.key == pygame.K_SPACE):
                 self.shooting = self.aiming
             if event.key == pygame.K_DOWN:
-                self.weapon.get()
+                self.__weapon_int = max(0, min(self.__weapon_int+1, len(self.weapons)-1))
                 self.__change_weapon()
                 
         elif event.type == pygame.KEYUP:
