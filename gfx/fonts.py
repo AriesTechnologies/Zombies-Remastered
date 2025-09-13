@@ -2,6 +2,7 @@
 
 import pygame
 from enum import IntEnum
+
 pygame.init()
 pygame.freetype.init()
 

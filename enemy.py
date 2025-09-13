@@ -1,6 +1,6 @@
 # --- Imports --- #
 
-import sprites
+##import sprites
 import random
 import pygame
 
@@ -15,12 +15,14 @@ ATTACK_EVENT = pygame.event.custom_type()
 # --- Enemy Class --- #
 
 class Enemy(pygame.sprite.Sprite):
+    _images: list[pygame.Surface] = None
+    
     def __init__(self, inverse_speed: bool):
         super().__init__()
 
         self.__animation_int = 0
-        self.__images = sprites.load(("Zombie1", "Zombie1_Running"))
-        self.image = self.__images[self.__animation_int]
+##        self.__images = sprites.load(("Zombie1", "Zombie1_Running"))
+        self.image = Enemy._images[self.__animation_int]
         self.rect = self.image.get_rect()
 
         self.rect.x = random.randrange(0,1280)
@@ -47,7 +49,7 @@ class Enemy(pygame.sprite.Sprite):
         elif player_x > self.rect.x:
             self.rect.x += self.speed
 
-        self.image = pygame.transform.flip(self.__images[self.__animation_int], (player_x < self.rect.x), False)
+        self.image = pygame.transform.flip(Enemy._images[self.__animation_int], (player_x < self.rect.x), False)
 
     def __animation(self):
         self.__counter += 1

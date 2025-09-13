@@ -4,6 +4,7 @@ import sys
 import pygame
 from enum import IntEnum, auto
 
+import sprites
 from gfx import Button, Label, Align, Palette, Text, TextSize, BLACK, GREEN, RED, WHITE
 from background import Background
 from enemy import Enemy, ATTACK_EVENT
@@ -12,16 +13,22 @@ from weapons import Bullet
 
 pygame.key.set_repeat(225,35)
 
+RESPAWN_EVENT = pygame.event.custom_type()
+
 
 # --- Variables --- #
 
 display_w = 1280
 display_h = 700
-display_size = (display_w,display_h)
+display_size = pygame.Vector2(display_w,display_h)
 TITLE = "Zombies: Remastered"
 
 pygame.display.set_caption(TITLE)
 display = pygame.display.set_mode(display_size, pygame.RESIZABLE)
+
+Bullet._image = pygame.image.load("images/Bullet.png").convert_alpha()
+Enemy._images = sprites.load(("Zombie1", "Zombie1_Running"))
+Background._images = sprites.load(("Outside_Mansion", "Inside_Mansion"))
 
 
 # --- Game State Class --- #
@@ -39,10 +46,6 @@ class Game:
     
     def __init__(self):
         self.clock = pygame.time.Clock()
-
-        #Timers
-        self.enemy_attack_timer = None
-        self.player_regen_timer = None
 
         self.quit = False
         self.debug = True
@@ -63,7 +66,7 @@ class Game:
         self.copyright_sprite = Label("©2025 AriesTechnologies", WHITE, TextSize.SMALL)
         self.copyright_sprite.rect.midbottom = display_w//2, display_h-5
 
-        self.menus_path = [self.title_menu]
+        self.menus_path = [self.__title_menu]
         self.menus_path[-1]()
 
     @property
@@ -78,12 +81,12 @@ class Game:
     def menu(self) -> bool:
         return self.state == State.MENU
 
-    def title_menu(self):
+    def __title_menu(self):
         self.ui.empty()
         lbl = Label("Zombies", GREEN, TextSize.XLARGE, Align.CENTER, (display_w//2,5))
         self.ui.add(lbl)
 
-        btnTexts = (("Play",self.play), ("Options",self.options_menu), ("Updates",self.updates_menu))
+        btnTexts = (("Play",self.__play), ("Options",self.__options_menu), ("Updates",self.__updates_menu))
         btnRect = pygame.Rect(536,371,208,58)
         for idx,text in enumerate(btnTexts):
             btn = Button(btnRect.size, text[0], onclick=text[1])
@@ -92,7 +95,7 @@ class Game:
 
         self.ui.add(self.copyright_sprite)
 
-    def options_menu(self):
+    def __options_menu(self):
         self.ui.empty()
         lbl = Label("Instructions:", GREEN, TextSize.XLARGE, Align.CENTER, (display_w//2,5))
         self.ui.add(lbl)
@@ -110,41 +113,35 @@ class Game:
 
         self.ui.add(self.copyright_sprite)
 
-    def updates_menu(self):
+    def __updates_menu(self):
         self.ui.empty()
         lbl = Label("Updates:", GREEN, TextSize.XLARGE, Align.CENTER, (display_w//2,5))
         self.ui.add(lbl)
 
         self.ui.add(self.copyright_sprite)
 
-    def play(self):
+    def __play(self):
         self.menus_path.clear()
         self.ui.empty()
         self.state = State.GAME
-        self.background.animation_int = 0
-        self.background.update()
-
-##        lbl = Label(f"Score: {self.score}", WHITE, TextSize.SMALL)
-##        self.score_sprite.rect.topleft = (5,5)
+        self.background.update(0)
+        
         self.ui.add(self.score_sprite)
-
         if self.debug:
             self.ui.add(self.debug_sprite)
 
-        self.enemy_attack_timer = pygame.time.set_timer(ATTACK_EVENT, 750, loops=0) #Every 3/4 seconds
-        self.player_regen_timer = pygame.time.set_timer(REGEN_EVENT, 1000, loops=0) #Every second
+        pygame.time.set_timer(ATTACK_EVENT, 750, loops=0) #Enemy attack, every 3/4 seconds
+        pygame.time.set_timer(REGEN_EVENT, 1000, loops=0) #Player regen, every second
 
-    def paused_menu(self):
+        self.enemies.add(Enemy(self.player.isInverse))
+
+    def __paused_menu(self):
         self.ui.empty()
         lbl = Label("Paused", RED, TextSize.LARGE)
         lbl.rect.center = display_w//2, display_h//2
         self.ui.add(lbl)
-        
-        lbl1 = Label(f"Score: {self.score}", WHITE, TextSize.MEDIUM)
-        lbl1.rect.midbottom = display_w//2, lbl.rect.top
-        self.ui.add(lbl1)
 
-    def game_over(self):
+    def __game_over(self):
         self.ui.empty()
         self.bullets.empty()
         self.enemies.empty()
@@ -158,10 +155,10 @@ class Game:
         lbl1.rect.y += lbl1.rect.height
         self.ui.add(lbl1)
 
-        self.enemy_attack_timer = pygame.time.set_timer(ATTACK_EVENT, 0, loops=0)
-        self.player_regen_timer = pygame.time.set_timer(REGEN_EVENT, 0, loops=0)
+        pygame.time.set_timer(ATTACK_EVENT, 0, loops=0)
+        pygame.time.set_timer(REGEN_EVENT, 0, loops=0)
         
-    def menu_events(self, event: pygame.event.Event):
+    def __menu_events(self, event: pygame.event.Event):
         buttons = filter(lambda sprite: isinstance(sprite, Button), self.ui)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -186,14 +183,14 @@ class Game:
             button.collide(pygame.mouse.get_pos())
             button.update()
 
-    def game_events(self, event: pygame.event.Event):
+    def __game_events(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 if self.player.dead:
                     self.__init__()
                 else:
                     self.state = State.PAUSED
-                    self.menus_path.append(self.paused_menu)
+                    self.menus_path.append(self.__paused_menu)
                     self.menus_path[-1]()
         elif event.type == ATTACK_EVENT:
             for enemy in self.enemies: #Checks for Zombie touching Player
@@ -204,10 +201,13 @@ class Game:
                 
                 self.player.health -= enemy.damage
 
-##            print(self.player.health, enemy.attack)
             if self.player.dead:
-                self.menus_path.append(self.game_over)
+                self.menus_path.append(self.__game_over)
                 self.menus_path[-1]()
+        elif event.type == RESPAWN_EVENT:
+            if len(self.enemies) != self.round_enemy_amount:
+                pygame.time.set_timer(RESPAWN_EVENT, 0, loops=0)
+                self.enemies.add(Enemy(self.player.isInverse))
              
         if self.player.dead:
             return
@@ -225,17 +225,15 @@ class Game:
                 self.ui.remove(self.debug_sprite)
             
         match self.state:
-            case State.MENU | State.PAUSED: self.menu_events(event)
-            case State.GAME: self.game_events(event)
+            case State.MENU | State.PAUSED: self.__menu_events(event)
+            case State.GAME: self.__game_events(event)
 
     def update(self):
         if self.menu or self.paused or self.player.dead:
             return
         
         if self.player.shooting and (self.player.weapon.max_bullets > len(self.bullets)):
-            self.bullets.add(Bullet(self.player.sprite.rect.center,(self.player.direction == "Left")))
-        if len(self.enemies) != self.round_enemy_amount:
-            self.enemies.add(Enemy((self.player.direction == "Left")))
+            self.bullets.add(Bullet(self.player.sprite.rect.center,self.player.isInverse))
 
         for bullet in self.bullets:
             bullet.update()
@@ -250,9 +248,11 @@ class Game:
                 enemy.kill()
                 self.score += 50
                 self.score_sprite.text = f"Score: {self.score}"
+                pygame.time.set_timer(RESPAWN_EVENT, 1250, loops=0) #Enemy respawn, every 1.25 seconds
 
     def draw(self):
-        display.fill(BLACK)
+        if self.player.dead:
+            display.fill(BLACK)
         if not self.paused and not self.player.dead:
             self.background.draw(display)
 

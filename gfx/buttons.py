@@ -6,6 +6,8 @@ from .palette import Palette
 from .colors import BLACK, WHITE, RED
 from .fonts import font, Text, TextSize
 
+__all__ = ("Button",)
+
 
 # --- Button Class --- #
 

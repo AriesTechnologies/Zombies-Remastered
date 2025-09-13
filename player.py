@@ -2,6 +2,7 @@
 
 import sprites
 import pygame
+from enum import IntEnum, auto
 from weapons import Weapon
 
 __all__ = ("Player", "REGEN_EVENT")
@@ -10,6 +11,13 @@ __all__ = ("Player", "REGEN_EVENT")
 # --- Variables --- #
 
 REGEN_EVENT = pygame.event.custom_type()
+
+
+# --- Direction Enum --- #
+
+class Direction(IntEnum):
+    LEFT = auto()
+    RIGHT = auto()
 
 
 # --- Player Class --- #
@@ -55,7 +63,7 @@ class Player(pygame.sprite.GroupSingle):
         
         self.aiming = False
         self.shooting = False
-        self.direction = "Right"
+        self.direction = Direction.RIGHT
 
     @property
     def dead(self) -> bool:
@@ -73,6 +81,10 @@ class Player(pygame.sprite.GroupSingle):
     def weapon(self) -> Weapon:
         return self.weapons[self.__weapon_int]
 
+    @property
+    def isInverse(self) -> bool:
+        return self.direction == Direction.LEFT
+
     def die(self):
         self.__animation_int = 0
         self.__images = self.__walking_list
@@ -83,8 +95,7 @@ class Player(pygame.sprite.GroupSingle):
         if self.__counter == 12:
             self.__counter = 0
             self.__animation_int = 0 if (self.__animation_int == 1) or (self.speed == 0) else 1
-        self.sprite.image = pygame.transform.flip(self.__images[self.__animation_int],
-                                                  (self.direction == "Left"), False)
+        self.sprite.image = pygame.transform.flip(self.__images[self.__animation_int], self.isInverse, False)
             
     def __jump(self):        
         if self.sprite.rect.y < self.__ground:
@@ -115,16 +126,15 @@ class Player(pygame.sprite.GroupSingle):
                 case _: self.__images = self.__shooting_list
 
         self.__animation_int = 0
-        self.sprite.image = pygame.transform.flip(self.__images[self.__animation_int],
-                                                  (self.direction == "Left"), False)
+        self.sprite.image = pygame.transform.flip(self.__images[self.__animation_int], self.isInverse, False)
 
     def __move(self, up=False, down=False, left=False, right=False):
         if right:
-            self.direction = "Right"
-            self.sprite.rect.x += self.speed
+            self.direction = Direction.RIGHT
+            self.sprite.rect.move_ip(self.speed,0)
         if left:
-            self.direction = "Left"
-            self.sprite.rect.x -= self.speed
+            self.direction = Direction.LEFT
+            self.sprite.rect.move_ip(-self.speed,0)
         if down:
             self.sprite.rect.y += self.gravity_speed
         if up and not self.jumped:
@@ -145,11 +155,11 @@ class Player(pygame.sprite.GroupSingle):
             return
         
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
             self.__move(up=True)
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.__move(left=True)
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.__move(right=True)
                 
         if event.type == pygame.KEYDOWN:      
@@ -159,8 +169,10 @@ class Player(pygame.sprite.GroupSingle):
             if (event.mod in {pygame.KMOD_RSHIFT, pygame.KMOD_LSHIFT})\
             and (event.key == pygame.K_SPACE):
                 self.shooting = self.aiming
-            if event.key == pygame.K_DOWN:
-                self.__weapon_int = max(0, min(self.__weapon_int+1, len(self.weapons)-1))
+            if event.key in {pygame.K_DOWN, pygame.K_s}:
+                self.__weapon_int += 1
+                if self.__weapon_int > len(self.weapons)-1:
+                    self.__weapon_int = 0
                 self.__change_weapon()
                 
         elif event.type == pygame.KEYUP:

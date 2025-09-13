@@ -5,6 +5,8 @@ from typing import Self
 from enum import IntEnum, auto
 from .fonts import Text, TextSize
 
+__all__ = ("Align", "Label")
+
 
 # --- Align Enum --- #
 

@@ -8,7 +8,7 @@ __all__ = ("Palette",)
 
 # --- Palette Class --- #
 
-@dataclass
+@dataclass(slots=True)
 class Palette:
     bg_color: pygame.Color
     fg_color: pygame.Color
